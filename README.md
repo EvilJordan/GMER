@@ -1,16 +1,14 @@
-Posting this in #general for feedback!
+# GMER - **G**aming **M**etadata **E**(x)ternal **R**egistry
 
-So what I'm trying to do is design our NFTs in a way that extends beyond just simple collectibles, preparing for actual utility, interoperability, and upgradeability _in the future_.
+### An ERC-721-compatible NFT designed to hold metadata in a way that extends beyond just simple collectibles; including extensible utility, interoperability, and upgradeability.
 
-The problem is metadata can either be **mutable** or **immutable**, but not both, and anything we want to do should be compatible with existing standards, and use the `tokenURI()` method. There are no current standards or adopted paradigms to handle this, and GameStop is in a position to influence that.
+This is an L2 contract that exists sort of like ENS in that it holds records and pointers to data elsewhere.
 
-A note before reading: our `tokenID` is made up of a deterministic formula that can be decomposed into: `companyID`, `collectionID`, and `editionID`. `myCompanyID` is equivalent to `companyID` unless otherwise specified in a function call. Additionally, Brecht at Loopring and I worked this out over the course of the past few days, so at least there is one intelligent person with eyes on this already.
+Anyone could register a "top level" `companyID` within GMER. A `companyID` is registered to the `msg.sender` that created it in a mapping of `_companyID -> address`, though this could be extended to allow/revoke permissions for other addresses as well. Only `companyID` owners/managers are allowed to create `collectionID`s underneath that `companyID`. There is now one more level, by default, with the same `myCompanyID` again. This indicates that this `Company.Collection.Company` is the source of truth for _immutable_ data relating to the individual `editionIDs` that fall under this Collection. `myCompanyID` is an array, with the first index - called a `patch` - containing a key of `directory`, pointing to the immutable IPFS directory hash we created during the minting process. 
 
-The crux of this proposal is what I'm calling the **G**ameStop **M**etadata **E**(x)ternal **R**egistry – **GMER**.
+The `tokenID` referenced in this document is made up of a deterministic formula that can be decomposed into: `companyID`, `collectionID`, and `editionID`. `myCompanyID` is equivalent to `companyID` unless otherwise specified in a function call.
 
-This is a L1 contract that exists sort of like ENS in that it holds records and pointers to data elsewhere.
-
-Anyone could register a "top level" `companyID` within GMER, though we would reserve a large chunk for GameStop to own and manage. A `companyID` is registered to the `msg.sender` that created it in a mapping of `_companyID -> address`, though this could be extended to allow/revoke permissions for other addresses as well. Only `companyID` owners/managers are allowed to create `collectionID`s underneath that `companyID`. There is now one more level, by default, with the same `myCompanyID` again. This indicates that this `Company.Collection.Company` is the source of truth for _immutable_ data relating to the individual `editionIDs` that fall under this Collection. `myCompanyID` is an array, with the first index - called a `patch` containing a key of `directory`, pointing to the immutable IPFS directory hash we create during our GameStop minting process. The structure thus-far looks like this:
+The structure thus-far looks like this:
 
 ```
 100 // companyID
@@ -35,6 +33,6 @@ The GMER contract needs a read method: `getMetadata(tokenID, myCompanyID, patchN
 
 `mint()` can optionally be extended by other contracts wanting to use GMER to add an entry to the registry for the minted token by including additional parameters, overriding its function, and calling `setMetadata()` from the NFT contract.
 
-The problem of cost to call the `setMetadata()` method of GMER seems like a big issue, therefore we recommend that `myCompanyID` create all their metadata, push to IPFS, and then create an IPFS directory. Store that directory hash/destination in the `directory `key of `companyID/collectionID/myCompanyID[n]/directory`. Alternatively, a hash/destination can be stored on an individual `tokens/editionID` level. Missing `destination`s fallback down the tree to an earlier version.
+L2s renders creating and updating metadata within GMER inexpensive and trivial, therefore we recommend that `myCompanyID` create all their metadata, push to IPFS, and then create an IPFS directory. Store that directory hash/destination in the `directory `key of `companyID/collectionID/myCompanyID[n]/directory`. Alternatively, a hash/destination can be stored on an individual `tokens/editionID` level. Missing `destination`s fallback down the tree to an earlier version.
 
-All of this functionality allows for a company to push new metadata to an NFT over time, while maintaining history as an immutable state. This data could describe various attributes, contain instructions for NFT display in a given engine, or who knows what else. The point isn't to define those use-cases now, but allow our NFTs to be special so they can evolve with whatever comes next.
+All of this functionality allows for a company/creator to push new metadata to an NFT over time, while maintaining history as an immutable state. This data could describe various attributes, contain instructions for NFT display in a given engine, or who knows what else. The point isn't to define those use-cases now, but allow NFTs to be special so they can evolve with whatever comes next.
